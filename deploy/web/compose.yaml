@@ -1,0 +1,16 @@
+# Landing y app web en el servidor. La publica deploy/web/deploy.sh.
+name: matrices-web
+
+services:
+  web:
+    build: .
+    image: matrices-web:latest
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-5190}:80"
+    mem_limit: 64m
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"

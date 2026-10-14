@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Publicar APK · Matrices</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Antes de pintar: evita un parpadeo claro al usar el tema oscuro. -->
+  <script src="theme.js"></script>
+  <style>
+    .panel { max-width: 520px; margin: 24px auto 64px; background: var(--card); border: 1px solid var(--line);
+      border-radius: 24px; padding: 28px; box-shadow: var(--shadow); }
+    .panel h1 { margin: 0 0 6px; font-size: 26px; }
+    .panel p { color: var(--muted); margin: 0 0 22px; }
+    label { display: block; font-weight: 600; font-size: 14px; margin: 16px 0 6px; }
+    input[type=text], input[type=password], textarea {
+      width: 100%; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--bg); color: var(--ink); font: inherit; }
+    textarea { min-height: 72px; resize: vertical; }
+    .file { display: grid; place-items: center; gap: 6px; padding: 26px; border: 2px dashed var(--line);
+      border-radius: 16px; cursor: pointer; text-align: center; color: var(--muted); }
+    .file.has { border-color: var(--brand); color: var(--ink); }
+    .file input { display: none; }
+    progress { width: 100%; height: 10px; margin-top: 16px; accent-color: var(--brand); }
+    .msg { margin-top: 14px; font-weight: 600; }
+    .msg.ok { color: #16a34a; } .msg.err { color: #dc2626; }
+    button.btn { width: 100%; margin-top: 22px; }
+    .current { font-size: 14px; color: var(--muted); background: var(--brand-soft); padding: 10px 14px; border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <header class="wrap top">
+    <a class="brand" href="./"><img src="icon-192.png" alt="">Matrices</a>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Tema"></button>
+  </header>
+  <main class="wrap">
+    <form class="panel" id="form">
+      <h1>Publicar APK</h1>
+      <p>El archivo reemplaza al que se descarga desde la página principal.</p>
+      <div class="current" id="current">Consultando versión publicada…</div>
+
+      <label for="key">Clave de subida</label>
+      <input id="key" type="password" autocomplete="off" required>
+
+      <label for="version">Versión</label>
+      <input id="version" type="text" placeholder="1.0.0" required maxlength="30">
+
+      <label for="notes">Novedades (opcional)</label>
+      <textarea id="notes" maxlength="500" placeholder="Qué cambió en esta versión"></textarea>
+
+      <label>Archivo</label>
+      <label class="file" id="drop">
+        <input id="file" type="file" accept=".apk,application/vnd.android.package-archive" required>
+        <strong id="file-name">Elegir el APK</strong>
+        <span>app-release.apk</span>
+      </label>
+
+      <button class="btn btn-primary" type="submit" id="send">Publicar</button>
+      <progress id="bar" max="100" value="0" hidden></progress>
+      <div class="msg" id="msg"></div>
+    </form>
+  </main>
+  <script>
+    (function () {
+      var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+      var API = local ? "http://localhost:5120" : "https://matricesapi.quantis.site";
+      var $ = function (id) { return document.getElementById(id); };
+
+      function loadCurrent() {
+        fetch(API + "/api/apk").then(function (r) { return r.json(); }).then(function (i) {
+          $("current").textContent = i.available
+            ? "Publicada: versión " + i.version + " (" + (i.sizeBytes / 1048576).toFixed(1) + " MB, " +
+              new Date(i.uploadedAt).toLocaleString("es") + ")"
+            : "Todavía no hay un APK publicado.";
+        }).catch(function () { $("current").textContent = "No se pudo consultar la API."; });
+      }
+      loadCurrent();
+
+      $("file").onchange = function () {
+        var f = this.files[0];
+        $("file-name").textContent = f ? f.name + " · " + (f.size / 1048576).toFixed(1) + " MB" : "Elegir el APK";
+        $("drop").classList.toggle("has", !!f);
+      };
+
+      $("form").onsubmit = function (e) {
+        e.preventDefault();
+        var file = $("file").files[0];
+        if (!file) return;
+        var data = new FormData();
+        data.append("file", file);
+        data.append("version", $("version").value.trim());
+        data.append("notes", $("notes").value.trim());
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", API + "/api/apk");
+        xhr.setRequestHeader("X-Upload-Key", $("key").value);
+        $("send").disabled = true;
+        $("bar").hidden = false;
+        $("msg").className = "msg";
+        $("msg").textContent = "Subiendo…";
+        xhr.upload.onprogress = function (ev) {
+          if (ev.lengthComputable) $("bar").value = Math.round((ev.loaded / ev.total) * 100);
+        };
+        xhr.onload = function () {
+          $("send").disabled = false;
+          var body = {};
+          try { body = JSON.parse(xhr.responseText); } catch (err) {}
+          if (xhr.status === 200) {
+            $("msg").className = "msg ok";
+            $("msg").textContent = "Listo: versión " + body.version + " publicada.";
+            loadCurrent();
+          } else {
+            $("msg").className = "msg err";
+            $("msg").textContent = body.detail || ("Error " + xhr.status);
+          }
+        };
+        xhr.onerror = function () {
+          $("send").disabled = false;
+          $("msg").className = "msg err";
+          $("msg").textContent = "Sin conexión con la API.";
+        };
+        xhr.send(data);
+      };
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matrices · Suma y resta de matrices</title>
+  <meta name="description" content="Suma y resta matrices al instante, también desde una foto. Gratis en el navegador, Android y iPhone.">
+  <meta name="theme-color" content="#4F46E5">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta property="og:title" content="Matrices">
+  <meta property="og:description" content="Suma y resta matrices al instante, también desde una foto.">
+  <meta property="og:image" content="icon-512.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Antes de pintar: evita un parpadeo claro al usar el tema oscuro. -->
+  <script src="theme.js"></script>
+</head>
+<body>
+  <header class="wrap top">
+    <a class="brand" href="./"><img src="icon-192.png" alt="">Matrices</a>
+    <div class="top-actions">
+      <button class="theme-btn" id="theme-btn" type="button" aria-label="Tema"></button>
+      <a class="btn btn-ghost btn-small" href="app/">Abrir la app</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap hero">
+      <div>
+        <h1>Suma y resta de matrices, <span>sin errores.</span></h1>
+        <p class="lead">
+          Escribe tus matrices o tómales una foto y obtén el resultado al instante,
+          con el paso a paso. Exacto con decimales y fracciones, y con tu historial
+          guardado en tu cuenta de Google.
+        </p>
+        <div class="cta" id="cta"></div>
+        <p class="hint" id="cta-hint"></p>
+      </div>
+      <div class="demo" aria-hidden="true">
+        <div class="mx"><b>2</b><b>-1</b><b>1/2</b><b>0.1</b></div>
+        <div class="op">+</div>
+        <div class="mx"><b>3</b><b>4</b><b>1/4</b><b>0.2</b></div>
+        <div class="op">=</div>
+        <div class="mx r"><b>5</b><b>3</b><b>3/4</b><b>0.3</b></div>
+      </div>
+    </section>
+
+    <section class="wrap">
+      <h2>Todo lo que necesitas</h2>
+      <p class="sub">Pensada para estudiantes y profes: rápida, clara y sin anuncios.</p>
+      <div class="features">
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-6.5 4h4v1.5h-4V7ZM7 7.25h1.5V5.5H10v1.75h1.75v1.5H10v1.75H8.5V8.75H6.75v-1.5ZM11.75 17h-5v-1.5h5V17Zm5.5 1h-4v-1.5h4V18Zm0-2.5h-4V14h4v1.5Z"/></svg></div>
+          <h3>Suma y resta exactas</h3>
+          <p>Hasta 10×10, con enteros, decimales y fracciones: 0.1 + 0.2 da 0.3.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8-3h-3.2l-1.8-2H9L7.2 6H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm-8 13a6 6 0 1 1 0-12 6 6 0 0 1 0 12Z"/></svg></div>
+          <h3>Desde una foto</h3>
+          <p>Fotografía el ejercicio: lee una o dos matrices y te deja corregirlas.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h12v2H3V5Zm0 4h12v2H3V9Zm0 4h8v2H3v-2Zm14.6-1.4L19 13l-4.6 4.6-2.8-2.8L13 13.4l1.4 1.4 3.2-3.2Z"/></svg></div>
+          <h3>Paso a paso</h3>
+          <p>Ve cómo se obtiene cada celda del resultado para entender el método.</p>
+        </div>
+        <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9.1.1L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3Zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8H12Z"/></svg></div>
+          <h3>Tu historial</h3>
+          <p>Entra con Google y retoma cualquier operación desde cualquier equipo.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap" id="instalar">
+      <h2>Úsala donde quieras</h2>
+      <p class="sub">La misma app en la computadora, en Android y en iPhone.</p>
+      <div class="install">
+        <article class="option" data-device="pc">
+          <span class="tag" hidden></span>
+          <h3><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2H0v2h24v-2h-4ZM4 6h16v10H4V6Z"/></svg>En el navegador</h3>
+          <p>Sin instalar nada. Ideal en la computadora: escribe con el teclado y pasa de celda con Tab.</p>
+          <a class="btn btn-primary" href="app/">Abrir la app</a>
+        </article>
+
+        <article class="option" data-device="android">
+          <span class="tag" hidden></span>
+          <h3><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2Zm0 18H7V5h10v14Z"/></svg>Android</h3>
+          <ol class="steps">
+            <li>Descarga el archivo de instalación (APK).</li>
+            <li>Ábrelo desde la notificación o desde Descargas.</li>
+            <li>Si te lo pide, permite <em>instalar apps de esta fuente</em> y toca Instalar.</li>
+          </ol>
+          <p class="meta" id="apk-meta">Buscando la última versión…</p>
+          <a class="btn btn-primary" id="apk-btn" aria-disabled="true" href="#">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 20h14v-2H5v2Zm14-9h-4V3H9v8H5l7 7 7-7Z"/></svg>Descargar APK
+          </a>
+        </article>
+
+        <article class="option" data-device="ios">
+          <span class="tag" hidden></span>
+          <h3><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H8a3 3 0 0 0-3 3v16a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3Zm-2 20h-4v-1h4v1Zm3.25-3H6.75V4h10.5v14Z"/></svg>iPhone y iPad</h3>
+          <ol class="steps ios-steps">
+            <li>Abre la app en <b>Safari</b>.</li>
+            <li>Toca <b>Compartir</b> <svg class="inline-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5.5 14.6 6.9 13 5.3V15h-2V5.3L9.4 6.9 8 5.5 12 1.5l4 4ZM18 9h-2V8.5h2a2 2 0 0 1 2 2V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2h2V10H6v10h12V9Z"/></svg> en la barra.</li>
+            <li>Elige <b>Agregar a inicio</b> y toca <b>Agregar</b>.</li>
+          </ol>
+          <p class="meta">Queda con su ícono y a pantalla completa, como una app.</p>
+          <a class="btn btn-primary" href="app/">Abrir en Safari</a>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Matrices · quantis.site</span>
+      <a href="app/">Abrir la app</a>
+    </div>
+  </footer>
+
+  <dialog id="ios-dialog">
+    <div class="in">
+      <h3>Instalar en tu iPhone</h3>
+      <ol class="steps">
+        <li>Toca <b>Abrir la app</b> (abajo). Debe abrirse en <b>Safari</b>.</li>
+        <li>Toca <b>Compartir</b> <svg class="inline-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5.5 14.6 6.9 13 5.3V15h-2V5.3L9.4 6.9 8 5.5 12 1.5l4 4ZM18 9h-2V8.5h2a2 2 0 0 1 2 2V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2h2V10H6v10h12V9Z"/></svg> en la barra de Safari.</li>
+        <li>Desliza y elige <b>Agregar a inicio</b>.</li>
+        <li>Toca <b>Agregar</b>. Abre Matrices desde su ícono.</li>
+      </ol>
+      <a class="btn btn-primary" href="app/">Abrir la app</a>
+      <button class="btn btn-ghost" id="ios-close" type="button">Cerrar</button>
+    </div>
+  </dialog>
+
+  <script src="landing.js"></script>
+</body>
+</html>
