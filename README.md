@@ -12,6 +12,21 @@ Tamaños de 1×1 a 10×10, enteros, decimales (`2.5` o `2,5`) y fracciones
 (`3/4`). Paso a paso del cálculo, "usar resultado como A" para encadenar,
 copiar resultado, tema claro/oscuro.
 
+## Desplegado
+
+| | URL |
+| --- | --- |
+| Landing (descripción, instalar en iPhone / Android / PC) | https://matrices.quantis.site |
+| App web / PWA | https://matrices.quantis.site/app/ |
+| Publicar APK nuevo | https://matrices.quantis.site/subir |
+| API | https://matricesapi.quantis.site |
+| Estado de la API | https://matricesapi.quantis.site/health |
+| Documentación de la API | https://matricesapi.quantis.site/docs |
+| Descarga del APK | https://matricesapi.quantis.site/api/apk/download |
+
+Repos: [matrices-api](https://github.com/dalvarez005/matrices-api) · [matrices-app](https://github.com/dalvarez005/matrices-app).
+Servidor: Orange Pi (Docker) detrás del túnel de Cloudflare.
+
 ## Estructura
 
 ```
