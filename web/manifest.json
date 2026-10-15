@@ -1,6 +1,6 @@
 {
-    "name": "Matrices",
-    "short_name": "Matrices",
+    "name": "MatriCalc",
+    "short_name": "MatriCalc",
     "id": "/app/",
     "start_url": "./",
     "scope": "./",

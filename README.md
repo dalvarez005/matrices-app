@@ -1,8 +1,11 @@
-# Matrices
+# MatriCalc
 
 App de **suma y resta de matrices** en Flutter: web (PC y PWA para iPhone),
 APK de Android e iOS. API en `../matrices-api`.
 
+- **Simple** (A ± B) o **compuesta**: de 3 a 8 matrices con un operador
+  (+ o −) independiente entre cada par, la expresión completa a la vista
+  (`R = A + B − C`) y el paso a paso por etapas y por celda.
 - Sin cuenta: la calculadora funciona completa (el cálculo es local y exacto).
 - Con Google: cada operación se guarda en el historial del usuario.
 - **Desde foto**: se sube una foto de una o dos matrices, la API las lee

@@ -135,7 +135,7 @@ class _HistoryPageState extends State<HistoryPage> {
       return const _EmptyState(
         icon: Icons.grid_on_rounded,
         title: 'Aún no hay operaciones',
-        message: 'Cada suma o resta que calcules aparecerá aquí.',
+        message: 'Cada operación que calcules aparecerá aquí.',
       );
     }
     return RefreshIndicator(
@@ -197,7 +197,8 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final size = '${item.a.length}×${item.a.first.length}';
+    final first = item.matrices.first;
+    final size = '${first.length}×${first.first.length}';
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
@@ -220,7 +221,7 @@ class _HistoryCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      '${item.operation.label} $size · ${_date(item.createdAt)}',
+                      '${item.label} $size · ${_date(item.createdAt)}',
                       style: text.labelLarge,
                     ),
                   ),
@@ -240,9 +241,10 @@ class _HistoryCard extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    MatrixView(values: item.a, dense: true),
-                    _Symbol(item.operation.symbol),
-                    MatrixView(values: item.b, dense: true),
+                    for (final (i, m) in item.matrices.indexed) ...[
+                      if (i > 0) _Symbol(item.operators[i - 1].symbol),
+                      MatrixView(values: m, dense: true),
+                    ],
                     const _Symbol('='),
                     MatrixView(
                       values: item.result,
