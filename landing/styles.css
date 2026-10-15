@@ -96,7 +96,10 @@ a { color: inherit; }
 /* Funciones */
 section h2 { font-size: clamp(26px, 3.4vw, 36px); margin: 0 0 8px; letter-spacing: -.01em; }
 section .sub { color: var(--muted); margin: 0 0 28px; }
-.features { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding-bottom: 64px; }
+.features { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; padding-bottom: 64px; }
+/* Cinco tarjetas: tres arriba y dos más anchas abajo. */
+.feature { grid-column: span 2; }
+.feature:nth-child(n+4) { grid-column: span 3; }
 .feature { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
 .feature .ic {
   width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
@@ -147,10 +150,13 @@ dialog h3 { margin: 0; font-size: 22px; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 32px; padding-block-start: 16px; }
   .features { grid-template-columns: repeat(2, 1fr); }
+  .feature, .feature:nth-child(n+4) { grid-column: auto; }
+  .feature:last-child { grid-column: 1 / -1; }
   .install { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
   .features { grid-template-columns: 1fr; }
+  .feature:last-child { grid-column: auto; }
   .cta .btn { flex: 1 1 100%; }
   .mx { grid-template-columns: repeat(2, 30px); gap: 4px; padding: 6px 9px; }
   .mx b { height: 30px; font-size: 12px; border-radius: 8px; }

@@ -60,4 +60,71 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Resultado'), findsOneWidget);
   });
+
+  testWidgets('operación compuesta A + B − C con paso a paso', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final services = Services.instance = Services(
+      ApiClient(baseUrl: 'http://test'),
+    );
+    SharedPreferences.setMockInitialValues({});
+    services.theme = await ThemeController.load();
+    await tester.pumpWidget(
+      MatricesApp(session: services.session, theme: services.theme),
+    );
+
+    await tester.tap(find.text('Compuesta'));
+    await tester.pumpAndSettle();
+    final cells = find.byType(TextField);
+    expect(cells, findsNWidgets(12));
+    expect(find.text('Agregar matriz D'), findsOneWidget);
+
+    // El segundo signo (entre B y C) pasa a resta.
+    await tester.tap(find.byTooltip('Cambiar a resta').at(1));
+    await tester.pumpAndSettle();
+    expect(find.text('Calcular A + B − C'), findsOneWidget);
+
+    const values = [
+      '1',
+      '2',
+      '3',
+      '4',
+      '1',
+      '1',
+      '1',
+      '1',
+      '0.5',
+      '1',
+      '1',
+      '1/2',
+    ];
+    for (final (i, v) in values.indexed) {
+      await tester.enterText(cells.at(i), v);
+    }
+    await tester.tap(find.text('Calcular A + B − C'));
+    await tester.pumpAndSettle();
+    for (final v in ['1.5', '9/2']) {
+      expect(find.text(v), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Ver paso a paso'));
+    await tester.pumpAndSettle();
+    expect(find.text('Paso 1:  P1 = A + B'), findsOneWidget);
+    expect(find.text('Paso 2:  R = P1 − C'), findsOneWidget);
+
+    // Agregar D y quitarla deja la expresión como estaba.
+    await tester.tap(find.text('Agregar matriz D'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNWidgets(16));
+    await tester.tap(find.byTooltip('Quitar D'));
+    await tester.pumpAndSettle();
+    expect(find.text('Calcular A + B − C'), findsOneWidget);
+
+    // Volver a simple conserva A y B.
+    await tester.tap(find.text('Simple'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNWidgets(8));
+    expect(find.text('Calcular A + B'), findsOneWidget);
+  });
 }

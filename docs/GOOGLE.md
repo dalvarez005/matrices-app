@@ -6,7 +6,7 @@ La app pide a Google un **idToken** y la API lo valida contra el client id
 
 | Tipo | Datos | Dónde va |
 | --- | --- | --- |
-| **Web** | Orígenes JS: `https://matrices.quantis.site`, `http://localhost:5191` | `Env.googleServerClientId` (app), `GOOGLE_CLIENT_IDS` (API `.env`), `GIDServerClientID` (iOS) |
+| **Web** | Orígenes JS: `https://matricalc.quantis.site`, `http://localhost:5191` | `Env.googleServerClientId` (app), `GOOGLE_CLIENT_IDS` (API `.env`), `GIDServerClientID` (iOS) |
 | **Android** | Paquete `site.quantis.matrices` + SHA-1 de la clave que firma el APK | No va en código: Google lo reconoce por paquete + SHA-1 |
 | **iOS** | Bundle ID `site.quantis.matrices` | `Env.googleIosClientId`, `GIDClientID` y el URL scheme invertido en `ios/Runner/Info.plist` |
 

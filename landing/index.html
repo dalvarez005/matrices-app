@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Matrices · Suma y resta de matrices</title>
-  <meta name="description" content="Suma y resta matrices al instante, también desde una foto. Gratis en el navegador, Android y iPhone.">
+  <title>MatriCalc · Suma y resta de matrices</title>
+  <meta name="description" content="Suma y resta dos o más matrices al instante, también desde una foto. Gratis en el navegador, Android y iPhone.">
   <meta name="theme-color" content="#4F46E5">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <meta property="og:title" content="Matrices">
+  <meta property="og:title" content="MatriCalc">
   <meta property="og:description" content="Suma y resta matrices al instante, también desde una foto.">
   <meta property="og:image" content="icon-512.png">
   <link rel="stylesheet" href="styles.css">
@@ -17,7 +17,7 @@
 </head>
 <body>
   <header class="wrap top">
-    <a class="brand" href="./"><img src="icon-192.png" alt="">Matrices</a>
+    <a class="brand" href="./"><img src="icon-192.png" alt="">MatriCalc</a>
     <div class="top-actions">
       <button class="theme-btn" id="theme-btn" type="button" aria-label="Tema"></button>
       <a class="btn btn-ghost btn-small" href="app/">Abrir la app</a>
@@ -30,7 +30,8 @@
         <h1>Suma y resta de matrices, <span>sin errores.</span></h1>
         <p class="lead">
           Escribe tus matrices o tómales una foto y obtén el resultado al instante,
-          con el paso a paso. Exacto con decimales y fracciones, y con tu historial
+          con el paso a paso. Opera dos matrices o combina varias en una sola
+          expresión, como A + B − C. Exacto con decimales y fracciones, y con tu historial
           guardado en tu cuenta de Google.
         </p>
         <div class="cta" id="cta"></div>
@@ -55,6 +56,11 @@
           <p>Hasta 10×10, con enteros, decimales y fracciones: 0.1 + 0.2 da 0.3.</p>
         </div>
         <div class="feature">
+          <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 4H6v2l6.5 6L6 18v2h12v-3h-7l5-5-5-5h7V4Z"/></svg></div>
+          <h3>Operaciones compuestas</h3>
+          <p>Combina hasta 8 matrices y elige + o − entre cada par: A + B − C + D.</p>
+        </div>
+        <div class="feature">
           <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 9a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8-3h-3.2l-1.8-2H9L7.2 6H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm-8 13a6 6 0 1 1 0-12 6 6 0 0 1 0 12Z"/></svg></div>
           <h3>Desde una foto</h3>
           <p>Fotografía el ejercicio: lee una o dos matrices y te deja corregirlas.</p>
@@ -62,7 +68,7 @@
         <div class="feature">
           <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5h12v2H3V5Zm0 4h12v2H3V9Zm0 4h8v2H3v-2Zm14.6-1.4L19 13l-4.6 4.6-2.8-2.8L13 13.4l1.4 1.4 3.2-3.2Z"/></svg></div>
           <h3>Paso a paso</h3>
-          <p>Ve cómo se obtiene cada celda del resultado para entender el método.</p>
+          <p>Cada operación con su resultado parcial y el cálculo de cada celda.</p>
         </div>
         <div class="feature">
           <div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9.1.1L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3Zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8H12Z"/></svg></div>
@@ -114,7 +120,7 @@
 
   <footer>
     <div class="wrap">
-      <span>Matrices · quantis.site</span>
+      <span>MatriCalc · quantis.site</span>
       <a href="app/">Abrir la app</a>
     </div>
   </footer>
@@ -126,7 +132,7 @@
         <li>Toca <b>Abrir la app</b> (abajo). Debe abrirse en <b>Safari</b>.</li>
         <li>Toca <b>Compartir</b> <svg class="inline-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5.5 14.6 6.9 13 5.3V15h-2V5.3L9.4 6.9 8 5.5 12 1.5l4 4ZM18 9h-2V8.5h2a2 2 0 0 1 2 2V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2h2V10H6v10h12V9Z"/></svg> en la barra de Safari.</li>
         <li>Desliza y elige <b>Agregar a inicio</b>.</li>
-        <li>Toca <b>Agregar</b>. Abre Matrices desde su ícono.</li>
+        <li>Toca <b>Agregar</b>. Abre MatriCalc desde su ícono.</li>
       </ol>
       <a class="btn btn-primary" href="app/">Abrir la app</a>
       <button class="btn btn-ghost" id="ios-close" type="button">Cerrar</button>
