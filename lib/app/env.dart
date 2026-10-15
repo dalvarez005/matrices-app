@@ -6,7 +6,7 @@ class Env {
   static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   /// API en la Orange Pi (HTTPS por el túnel de Cloudflare).
-  static const productionApiBaseUrl = 'https://matricesapi.quantis.site';
+  static const productionApiBaseUrl = 'https://matricalcapi.quantis.site';
 
   /// API en la máquina de desarrollo: el emulador de Android llega por
   /// 10.0.2.2; el navegador y el simulador de iOS, por localhost.

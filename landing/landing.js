@@ -2,7 +2,7 @@
 // los datos del APK publicado.
 (function () {
   var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-  var API = local ? "http://localhost:5120" : "https://matricesapi.quantis.site";
+  var API = local ? "http://localhost:5120" : "https://matricalcapi.quantis.site";
 
   var ua = navigator.userAgent;
   var isIOS = /iPhone|iPad|iPod/.test(ua) ||
