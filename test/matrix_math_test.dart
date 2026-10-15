@@ -87,4 +87,96 @@ void main() {
       });
     });
   });
+
+  group('evaluate (compuestas)', () {
+    test('A + B − C con resultados parciales', () {
+      final r = evaluate(
+        [
+          [
+            ['1', '2'],
+          ],
+          [
+            ['3', '4'],
+          ],
+          [
+            ['10', '0.5'],
+          ],
+        ],
+        [MatrixOp.add, MatrixOp.subtract],
+      );
+      expect(r.ok, isTrue);
+      expect(r.partials, [
+        [
+          ['4', '6'],
+        ],
+        [
+          ['-6', '5.5'],
+        ],
+      ]);
+      expect(r.values, r.partials.last);
+    });
+
+    test('fracción si alguna de las matrices la usa en esa celda', () {
+      final r = evaluate(
+        [
+          [
+            ['1', '1'],
+          ],
+          [
+            ['2', '0.5'],
+          ],
+          [
+            ['1/3', '1'],
+          ],
+        ],
+        [MatrixOp.add, MatrixOp.add],
+      );
+      expect(r.values, [
+        ['10/3', '2.5'],
+      ]);
+    });
+
+    test('distinto tamaño y celdas inválidas en C', () {
+      final size = evaluate(
+        [
+          [
+            ['1'],
+          ],
+          [
+            ['1'],
+          ],
+          [
+            ['1', '2'],
+          ],
+        ],
+        [MatrixOp.add, MatrixOp.add],
+      );
+      expect(size.ok, isFalse);
+      expect(size.sizeError, contains('C es 1×2'));
+
+      final invalid = evaluate(
+        [
+          [
+            ['1'],
+          ],
+          [
+            ['1'],
+          ],
+          [
+            ['x'],
+          ],
+        ],
+        [MatrixOp.add, MatrixOp.subtract],
+      );
+      expect(invalid.errors, {const CellError('C', 0, 0)});
+    });
+
+    test('expresión legible', () {
+      expect(expressionOf([MatrixOp.add]), 'A + B');
+      expect(
+        expressionOf([MatrixOp.subtract, MatrixOp.add, MatrixOp.subtract]),
+        'A − B + C − D',
+      );
+    });
+  });
 }

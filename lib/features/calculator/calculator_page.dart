@@ -29,16 +29,30 @@ class CalculatorPage extends StatefulWidget {
 class _CalculatorPageState extends State<CalculatorPage> {
   var _rows = 2;
   var _cols = 2;
-  var _op = MatrixOp.add;
 
-  late final _a = MatrixFields('A', _rows, _cols, onFocus: _onCellFocus);
-  late final _b = MatrixFields('B', _rows, _cols, onFocus: _onCellFocus);
+  /// Simple: A ± B. Compuesta: tres o más matrices, cada una con su operador.
+  var _compound = false;
+
+  /// Todas las matrices creadas. En modo simple se usan las dos primeras y
+  /// las demás se conservan por si se vuelve a compuesta.
+  final _fields = <MatrixFields>[];
+
+  /// Operador antes de cada matriz desde B: `_ops[i]` va entre la matriz i e
+  /// i + 1.
+  final _ops = <MatrixOp>[];
+
+  /// Matrices quitadas (para "Deshacer"); se liberan al cerrar la página.
+  final _removed = <MatrixFields>[];
 
   /// Celda con foco, para la barra de signo / fracción sobre el teclado.
   TextEditingController? _focusedCell;
   FocusNode? _focusedNode;
 
   MatrixResult? _result;
+
+  /// La expresión tal como se calculó (para el paso a paso).
+  List<Grid> _calcMatrices = const [];
+  List<MatrixOp> _calcOps = const [];
   Set<CellError> _errors = {};
   var _showSteps = false;
 
@@ -48,18 +62,34 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
   final _resultKey = GlobalKey();
 
+  int get _count => _compound ? _fields.length : 2;
+  List<MatrixFields> get _active => _fields.sublist(0, _count);
+  List<MatrixOp> get _activeOps => _ops.sublist(0, _count - 1);
+
   @override
   void initState() {
     super.initState();
-    _a.addListener(_edited);
-    _b.addListener(_edited);
+    _addFields();
+    _addFields();
   }
 
   @override
   void dispose() {
-    _a.dispose();
-    _b.dispose();
+    for (final f in [..._fields, ..._removed]) {
+      f.dispose();
+    }
     super.dispose();
+  }
+
+  void _addFields() {
+    final f = MatrixFields(
+      matrixName(_fields.length),
+      _rows,
+      _cols,
+      onFocus: _onCellFocus,
+    )..addListener(_edited);
+    if (_fields.isNotEmpty) _ops.add(MatrixOp.add);
+    _fields.add(f);
   }
 
   void _onCellFocus(TextEditingController cell, FocusNode node) => setState(() {
@@ -70,26 +100,112 @@ class _CalculatorPageState extends State<CalculatorPage> {
   /// Al editar, el resultado anterior ya no corresponde.
   void _edited() {
     if (_result == null && _errors.isEmpty) return;
-    setState(() {
-      _result = null;
-      _errors = {};
-    });
+    _invalidate();
   }
+
+  void _invalidate() => setState(() {
+    _result = null;
+    _errors = {};
+  });
 
   void _resize(int rows, int cols) {
     setState(() {
       _rows = rows.clamp(1, _maxSize);
       _cols = cols.clamp(1, _maxSize);
-      _a.resize(_rows, _cols);
-      _b.resize(_rows, _cols);
+      for (final f in _fields) {
+        f.resize(_rows, _cols);
+      }
+      _result = null;
+      _errors = {};
+    });
+  }
+
+  void _setCompound(bool compound) {
+    setState(() {
+      _compound = compound;
+      while (compound && _fields.length < 3) {
+        _addFields();
+      }
+      _result = null;
+      _errors = {};
+    });
+  }
+
+  void _addMatrix() {
+    if (_fields.length >= maxMatrices) return;
+    setState(() {
+      _addFields();
+      _result = null;
+      _errors = {};
+    });
+  }
+
+  /// Quita la matriz [index]. Si era A, la siguiente pasa a ser A y pierde su
+  /// operador.
+  void _removeMatrix(int index) {
+    if (_fields.length <= 3) return;
+    final removed = _fields[index];
+    final op = _ops[index == 0 ? 0 : index - 1];
+    setState(() {
+      _fields.removeAt(index);
+      _ops.removeAt(index == 0 ? 0 : index - 1);
+      _rename();
+      _result = null;
+      _errors = {};
+    });
+    if (removed.isEmpty) {
+      removed.dispose();
+      return;
+    }
+    _removed.add(removed);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text('Se quitó la matriz ${removed.name}.'),
+          action: SnackBarAction(
+            label: 'Deshacer',
+            onPressed: () {
+              if (!mounted || !_removed.remove(removed)) return;
+              if (_fields.length >= maxMatrices) {
+                removed.dispose();
+                return;
+              }
+              final at = index.clamp(0, _fields.length);
+              removed.resize(_rows, _cols);
+              setState(() {
+                _fields.insert(at, removed);
+                _ops.insert(at == 0 ? 0 : at - 1, op);
+                _rename();
+                _result = null;
+                _errors = {};
+              });
+            },
+          ),
+        ),
+      );
+  }
+
+  void _rename() {
+    for (final (i, f) in _fields.indexed) {
+      f.name = matrixName(i);
+    }
+  }
+
+  void _setOp(int index, MatrixOp op) {
+    if (_ops[index] == op) return;
+    setState(() {
+      _ops[index] = op;
       _result = null;
       _errors = {};
     });
   }
 
   void _clear() {
-    _a.clear();
-    _b.clear();
+    for (final f in _active) {
+      f.clear();
+    }
     setState(() {
       _result = null;
       _errors = {};
@@ -99,15 +215,20 @@ class _CalculatorPageState extends State<CalculatorPage> {
 
   void _calculate() {
     FocusScope.of(context).unfocus();
-    final a = _a.values, b = _b.values;
-    final result = calculate(_op, a, b);
+    final matrices = [for (final f in _active) f.values];
+    final ops = List.of(_activeOps);
+    final result = evaluate(matrices, ops);
+    if (result.sizeError != null) {
+      showToast(context, result.sizeError!, error: true);
+      return;
+    }
     if (!result.ok) {
       setState(() {
         _errors = result.errors;
         _result = null;
       });
       final onlyEmpty = result.errors.every(
-        (e) => (e.matrix == 'A' ? a : b)[e.row][e.col].isEmpty,
+        (e) => matrices[e.matrix.codeUnitAt(0) - 0x41][e.row][e.col].isEmpty,
       );
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -123,8 +244,9 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 ? SnackBarAction(
                     label: 'Usar 0',
                     onPressed: () {
-                      _a.fillEmpty('0');
-                      _b.fillEmpty('0');
+                      for (final f in _active) {
+                        f.fillEmpty('0');
+                      }
                       _calculate();
                     },
                   )
@@ -133,10 +255,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
         );
       return;
     }
-    setState(() {
-      _result = result;
-      _errors = {};
-    });
+    _show(result, matrices, ops);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final target = _resultKey.currentContext;
       if (target != null) {
@@ -146,13 +265,26 @@ class _CalculatorPageState extends State<CalculatorPage> {
         );
       }
     });
-    _save(a, b);
+    _save(matrices, ops);
   }
 
-  Future<void> _save(Grid a, Grid b) async {
+  void _show(MatrixResult result, List<Grid> matrices, List<MatrixOp> ops) {
+    setState(() {
+      _result = result;
+      _calcMatrices = matrices;
+      _calcOps = ops;
+      _errors = {};
+    });
+  }
+
+  Future<void> _save(List<Grid> matrices, List<MatrixOp> ops) async {
     if (!Services.instance.session.signedIn) return;
     try {
-      await Services.instance.history.save(_op, a, b, fromImage: _fromImage);
+      await Services.instance.history.save(
+        matrices,
+        ops,
+        fromImage: _fromImage,
+      );
     } on ApiException catch (e) {
       if (mounted) {
         showToast(
@@ -245,15 +377,15 @@ class _CalculatorPageState extends State<CalculatorPage> {
     ),
   );
 
-  /// Carga valores (de una foto o del historial). El tamaño lo manda A, o
-  /// B si solo llega B.
+  /// Carga valores de una foto en A y/o B (null = no se toca). El tamaño lo
+  /// manda A, o B si solo llega B.
   void _apply(List<List<String?>>? a, List<List<String?>>? b, MatrixOp? op) {
     final sizer = a ?? b!;
     _resize(sizer.length, sizer.first.length);
-    if (a != null) _a.fillFrom(a);
-    if (b != null) _b.fillFrom(b);
+    if (a != null) _fields[0].fillFrom(a);
+    if (b != null) _fields[1].fillFrom(b);
     setState(() {
-      if (op != null) _op = op;
+      if (op != null) _ops[0] = op;
       _result = null;
       _errors = {};
       _fromImage = false;
@@ -266,21 +398,47 @@ class _CalculatorPageState extends State<CalculatorPage> {
       MaterialPageRoute(builder: (_) => const HistoryPage()),
     );
     if (item == null) return;
-    _apply(item.a, item.b, item.operation);
+    final first = item.matrices.first;
+    _resize(first.length, first.first.length);
+    setState(() {
+      _compound = item.compound;
+      while (_fields.length < item.matrices.length) {
+        _addFields();
+      }
+      // En compuesta se usan exactamente las del historial.
+      while (item.compound && _fields.length > item.matrices.length) {
+        _fields.removeLast().dispose();
+        _ops.removeLast();
+      }
+      for (final (i, m) in item.matrices.indexed) {
+        _fields[i].fillFrom(m);
+      }
+      _ops.setRange(0, item.operators.length, item.operators);
+      _fromImage = false;
+    });
     // Se muestra el resultado sin volver a guardarlo.
-    setState(() => _result = calculate(_op, _a.values, _b.values));
+    final matrices = [for (final f in _active) f.values];
+    final result = evaluate(matrices, _activeOps);
+    if (result.ok) _show(result, matrices, List.of(_activeOps));
   }
 
   void _useResultAsA() {
     final result = _result;
     if (result == null) return;
-    _a.fillFrom(result.values);
-    _b.clear();
+    _fields[0].fillFrom(result.values);
+    for (final f in _active.skip(1)) {
+      f.clear();
+    }
     setState(() {
       _result = null;
       _fromImage = false;
     });
-    showToast(context, 'El resultado ahora es A. Escribe la nueva B.');
+    showToast(
+      context,
+      _compound
+          ? 'El resultado ahora es A. Escribe las demás matrices.'
+          : 'El resultado ahora es A. Escribe la nueva B.',
+    );
   }
 
   // --------------------------------------------------- Barra de teclado
@@ -330,7 +488,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
             ),
             const SizedBox(width: 12),
             const Text(
-              'Matrices',
+              'MatriCalc',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ],
@@ -385,6 +543,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       _controls(context),
+      if (_compound) ...[const SizedBox(height: 16), _expression(context)],
       const SizedBox(height: 16),
       _matrices(context),
       const SizedBox(height: 20),
@@ -404,6 +563,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
         Text('Suma y resta de matrices', style: text.headlineMedium),
         const SizedBox(height: 4),
         Text(
+          'Opera dos matrices o combina varias en una sola expresión. '
           'Escribe los valores, cárgalos desde una foto o abre una operación del historial.',
           style: text.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -423,6 +583,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _controls(context),
+                      if (_compound) ...[
+                        const SizedBox(height: 20),
+                        _expression(context),
+                      ],
                       const SizedBox(height: 24),
                       _matrices(context),
                       const SizedBox(height: 24),
@@ -484,6 +648,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
               'Tab o Enter pasa a la siguiente celda.',
             ),
             tip(
+              Icons.functions_rounded,
+              'En Compuesta combina hasta $maxMatrices matrices: toca un signo para cambiarlo.',
+            ),
+            tip(
               Icons.percent_rounded,
               'Acepta decimales (2.5 o 2,5) y fracciones (3/4).',
             ),
@@ -504,41 +672,119 @@ class _CalculatorPageState extends State<CalculatorPage> {
   }
 
   Widget _controls(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 10,
-      runSpacing: 12,
+    return Column(
       children: [
-        _Stepper(
-          label: 'Filas',
-          value: _rows,
-          onChanged: (v) => _resize(v, _cols),
-        ),
-        _Stepper(
-          label: 'Columnas',
-          value: _cols,
-          onChanged: (v) => _resize(_rows, v),
-        ),
-        SegmentedButton<MatrixOp>(
+        SegmentedButton<bool>(
           showSelectedIcon: false,
-          segments: [
-            for (final op in MatrixOp.values)
-              ButtonSegment(
-                value: op,
-                label: Text(
-                  '${op.symbol}  ${op.label}',
-                  style: const TextStyle(fontSize: 16),
-                ),
+          segments: const [
+            ButtonSegment(
+              value: false,
+              icon: Icon(Icons.exposure_rounded),
+              label: Text('Simple'),
+              tooltip: 'Dos matrices: A + B o A − B',
+            ),
+            ButtonSegment(
+              value: true,
+              icon: Icon(Icons.functions_rounded),
+              label: Text('Compuesta'),
+              tooltip: 'Tres o más matrices con sumas y restas',
+            ),
+          ],
+          selected: {_compound},
+          onSelectionChanged: (s) => _setCompound(s.first),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 10,
+          runSpacing: 12,
+          children: [
+            _Stepper(
+              label: 'Filas',
+              value: _rows,
+              onChanged: (v) => _resize(v, _cols),
+            ),
+            _Stepper(
+              label: 'Columnas',
+              value: _cols,
+              onChanged: (v) => _resize(_rows, v),
+            ),
+            if (_compound)
+              _Stepper(
+                label: 'Matrices',
+                value: _fields.length,
+                min: 3,
+                max: maxMatrices,
+                onChanged: (v) => v > _fields.length
+                    ? _addMatrix()
+                    : _removeMatrix(_fields.length - 1),
+              )
+            else
+              SegmentedButton<MatrixOp>(
+                showSelectedIcon: false,
+                segments: [
+                  for (final op in MatrixOp.values)
+                    ButtonSegment(
+                      value: op,
+                      label: Text(
+                        '${op.symbol}  ${op.label}',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                ],
+                selected: {_ops[0]},
+                onSelectionChanged: (s) => _setOp(0, s.first),
               ),
           ],
-          selected: {_op},
-          onSelectionChanged: (s) => setState(() {
-            _op = s.first;
-            _result = null;
-          }),
         ),
       ],
+    );
+  }
+
+  /// "R = A + B − C" con los signos tocables: la expresión completa antes de
+  /// calcular.
+  Widget _expression(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = Theme.of(context).textTheme.titleLarge;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Expresión · toca un signo para cambiarlo',
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: scheme.onSecondaryContainer),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text('R =  ', style: style?.copyWith(color: scheme.outline)),
+              for (var i = 0; i < _count; i++) ...[
+                if (i > 0)
+                  _OpButton(
+                    op: _ops[i - 1],
+                    onChanged: (op) => _setOp(i - 1, op),
+                    dense: true,
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Text(
+                    matrixName(i),
+                    style: style?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -547,49 +793,90 @@ class _CalculatorPageState extends State<CalculatorPage> {
       if (e.matrix == matrix) (e.row, e.col),
   };
 
-  /// A y B lado a lado si caben; si no (teléfono o matrices grandes), una
-  /// debajo de la otra.
+  /// Las matrices con su signo delante. Lado a lado si caben; si no
+  /// (teléfono o matrices grandes), una debajo de la otra.
   Widget _matrices(BuildContext context) {
-    final symbol = Text(
-      _op.symbol,
-      style: Theme.of(context).textTheme.displaySmall
-          ?.copyWith(color: Theme.of(context).colorScheme.primary),
-    );
-    final a = MatrixEditor(
-      fields: _a,
-      errors: _errorsOf('A'),
-      label: const MatrixLabel('A'),
-    );
-    final b = MatrixEditor(
-      fields: _b,
-      errors: _errorsOf('B'),
-      label: const MatrixLabel('B'),
-    );
+    Widget editor(int i) {
+      final f = _fields[i];
+      return MatrixEditor(
+        key: ObjectKey(f),
+        fields: f,
+        errors: _errorsOf(f.name),
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            MatrixLabel(f.name),
+            // Tab y Enter van de celda en celda, sin pasar por estos botones.
+            if (_compound && _fields.length > 3)
+              ExcludeFocusTraversal(
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Quitar ${f.name}',
+                  onPressed: () => _removeMatrix(i),
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    Widget op(int i) =>
+        _OpButton(op: _ops[i - 1], onChanged: (op) => _setOp(i - 1, op));
+
+    final add = _compound
+        ? Padding(
+            padding: const EdgeInsets.all(8),
+            child: OutlinedButton.icon(
+              onPressed: _fields.length < maxMatrices ? _addMatrix : null,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(
+                _fields.length < maxMatrices
+                    ? 'Agregar matriz ${matrixName(_fields.length)}'
+                    : 'Máximo $maxMatrices matrices',
+              ),
+            ),
+          )
+        : null;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final matrixWidth = MatrixEditor.widthFor(_cols);
         final sideBySide = constraints.maxWidth >= matrixWidth * 2 + 80;
         if (sideBySide) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          return Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            runSpacing: 20,
             children: [
-              a,
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: symbol,
-              ),
-              b,
+              editor(0),
+              for (var i = 1; i < _count; i++)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(8, 0, 8, _rows * 27.0 - 24),
+                      child: op(i),
+                    ),
+                    editor(i),
+                  ],
+                ),
+              ?add,
             ],
           );
         }
         return Column(
           children: [
-            a,
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: symbol,
-            ),
-            b,
+            editor(0),
+            for (var i = 1; i < _count; i++) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: op(i),
+              ),
+              editor(i),
+            ],
+            if (add != null) ...[const SizedBox(height: 8), add],
           ],
         );
       },
@@ -597,6 +884,10 @@ class _CalculatorPageState extends State<CalculatorPage> {
   }
 
   Widget _actions(BuildContext context) {
+    // Con muchas matrices la expresión ya se ve arriba.
+    final label = _count <= 3
+        ? 'Calcular ${expressionOf(_activeOps)}'
+        : 'Calcular';
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
@@ -609,10 +900,7 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 minimumSize: const Size.fromHeight(54),
               ),
               icon: const Icon(Icons.calculate_rounded),
-              label: Text(
-                'Calcular A ${_op.symbol} B',
-                style: const TextStyle(fontSize: 17),
-              ),
+              label: Text(label, style: const TextStyle(fontSize: 17)),
             ),
             const SizedBox(height: 12),
             Row(
@@ -654,7 +942,6 @@ class _CalculatorPageState extends State<CalculatorPage> {
   Widget _resultCard(BuildContext context) {
     final result = _result!;
     final text = Theme.of(context).textTheme;
-    final a = _a.values, b = _b.values;
     final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: EdgeInsets.zero,
@@ -667,20 +954,26 @@ class _CalculatorPageState extends State<CalculatorPage> {
                 const MatrixLabel('R'),
                 const SizedBox(width: 12),
                 Text('Resultado', style: text.titleLarge),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'A ${_op.symbol} B',
-                    style: text.labelLarge?.copyWith(
-                      color: scheme.onPrimaryContainer,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        expressionOf(_calcOps),
+                        overflow: TextOverflow.ellipsis,
+                        style: text.labelLarge?.copyWith(
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -727,45 +1020,96 @@ class _CalculatorPageState extends State<CalculatorPage> {
             ),
             if (_showSteps) ...[
               const Divider(height: 24),
-              Text(
-                'Se ${_op == MatrixOp.add ? 'suma' : 'resta'} cada celda de B '
-                '${_op == MatrixOp.add ? 'a' : 'de'} la celda en la misma posición de A:',
-                style: text.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              for (var r = 0; r < a.length; r++)
-                for (var c = 0; c < a[r].length; c++)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'r${r + 1}${c + 1} = ',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
-                          TextSpan(
-                            text:
-                                '${_paren(a[r][c])} ${_op.symbol} ${_paren(b[r][c])} = ',
-                          ),
-                          TextSpan(
-                            text: result.values[r][c],
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                      style: text.bodyLarge?.copyWith(
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ),
+              ..._steps(context, result),
             ],
           ],
         ),
       ),
     );
+  }
+
+  /// Compuesta: primero cada operación de izquierda a derecha con su
+  /// resultado parcial; después el cálculo de cada celda.
+  List<Widget> _steps(BuildContext context, MatrixResult result) {
+    final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final matrices = _calcMatrices, ops = _calcOps;
+    final first = matrices.first;
+    final compound = ops.length > 1;
+    String partialName(int k) => k == ops.length - 1 ? 'R' : 'P${k + 1}';
+    return [
+      if (!compound)
+        Text(
+          'Se ${ops[0] == MatrixOp.add ? 'suma' : 'resta'} cada celda de B '
+          '${ops[0] == MatrixOp.add ? 'a' : 'de'} la celda en la misma posición de A:',
+          style: text.bodyMedium,
+        )
+      else ...[
+        Text(
+          'Se resuelve de izquierda a derecha, una operación a la vez:',
+          style: text.bodyMedium,
+        ),
+        const SizedBox(height: 8),
+        for (var k = 0; k < ops.length; k++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                Text(
+                  'Paso ${k + 1}:  ${partialName(k)} = '
+                  '${k == 0 ? 'A' : partialName(k - 1)} ${ops[k].symbol} ${matrixName(k + 1)}',
+                  style: text.titleSmall,
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: MatrixView(
+                    values: result.partials[k],
+                    dense: true,
+                    highlight: k == ops.length - 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 8),
+        Text('Celda por celda:', style: text.bodyMedium),
+      ],
+      const SizedBox(height: 8),
+      for (var r = 0; r < first.length; r++)
+        for (var c = 0; c < first[r].length; c++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: 'r${r + 1}${c + 1} = ',
+                    style: TextStyle(color: scheme.outline),
+                  ),
+                  TextSpan(
+                    text: [
+                      _paren(matrices[0][r][c]),
+                      for (final (i, op) in ops.indexed)
+                        '${op.symbol} ${_paren(matrices[i + 1][r][c])}',
+                    ].join(' '),
+                  ),
+                  const TextSpan(text: ' = '),
+                  TextSpan(
+                    text: result.values[r][c],
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+              style: text.bodyLarge?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+    ];
   }
 
   /// Negativos entre paréntesis en los pasos: 3 − (−2).
@@ -818,10 +1162,14 @@ class _Stepper extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.min = 1,
+    this.max = _maxSize,
   });
 
   final String label;
   final int value;
+  final int min;
+  final int max;
   final ValueChanged<int> onChanged;
 
   @override
@@ -840,7 +1188,7 @@ class _Stepper extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             tooltip: 'Menos',
-            onPressed: value > 1 ? () => onChanged(value - 1) : null,
+            onPressed: value > min ? () => onChanged(value - 1) : null,
             icon: const Icon(Icons.remove_rounded),
           ),
           SizedBox(
@@ -854,10 +1202,65 @@ class _Stepper extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             tooltip: 'Más',
-            onPressed: value < _maxSize ? () => onChanged(value + 1) : null,
+            onPressed: value < max ? () => onChanged(value + 1) : null,
             icon: const Icon(Icons.add_rounded),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Signo entre dos matrices: al tocarlo cambia entre + y −.
+class _OpButton extends StatelessWidget {
+  const _OpButton({
+    required this.op,
+    required this.onChanged,
+    this.dense = false,
+  });
+
+  final MatrixOp op;
+  final ValueChanged<MatrixOp> onChanged;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final size = dense ? 36.0 : 52.0;
+    // Fuera del recorrido con Tab: así se pasa de una matriz a la siguiente.
+    return ExcludeFocusTraversal(
+      child: Tooltip(
+        message: 'Cambiar a ${op.flipped.label.toLowerCase()}',
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: dense ? 2 : 0),
+          child: Material(
+            color: dense ? scheme.surface : scheme.primaryContainer,
+            shape: const CircleBorder(),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => onChanged(op.flipped),
+              child: SizedBox.square(
+                dimension: size,
+                child: Center(
+                  child: Text(
+                    op.symbol,
+                    style:
+                        (dense
+                                ? textTheme.titleLarge
+                                : textTheme.headlineMedium)
+                            ?.copyWith(
+                              color: dense
+                                  ? scheme.primary
+                                  : scheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                            ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

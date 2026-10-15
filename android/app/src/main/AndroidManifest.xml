@@ -2,7 +2,7 @@
     <!-- La API (cálculo guardado, historial, lectura de fotos). -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Matrices"
+        android:label="MatriCalc"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

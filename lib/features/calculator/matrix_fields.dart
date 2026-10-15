@@ -9,8 +9,8 @@ class MatrixFields {
     resize(rows, cols);
   }
 
-  /// 'A' o 'B' (o el número de matriz detectada en una foto).
-  final String name;
+  /// 'A', 'B', 'C'… (cambia si se quita una matriz anterior).
+  String name;
 
   /// Se llama cuando una celda gana el foco.
   final void Function(TextEditingController cell, FocusNode node)? onFocus;

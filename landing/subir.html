@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Publicar APK · Matrices</title>
+  <title>Publicar APK · MatriCalc</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="stylesheet" href="styles.css">
   <!-- Antes de pintar: evita un parpadeo claro al usar el tema oscuro. -->
@@ -32,7 +32,7 @@
 </head>
 <body>
   <header class="wrap top">
-    <a class="brand" href="./"><img src="icon-192.png" alt="">Matrices</a>
+    <a class="brand" href="./"><img src="icon-192.png" alt="">MatriCalc</a>
     <button class="theme-btn" id="theme-btn" type="button" aria-label="Tema"></button>
   </header>
   <main class="wrap">
@@ -65,7 +65,7 @@
   <script>
     (function () {
       var local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-      var API = local ? "http://localhost:5120" : "https://matricesapi.quantis.site";
+      var API = local ? "http://localhost:5120" : "https://matricalcapi.quantis.site";
       var $ = function (id) { return document.getElementById(id); };
 
       function loadCurrent() {

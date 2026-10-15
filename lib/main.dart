@@ -48,7 +48,7 @@ class MatricesApp extends StatelessWidget {
       child: ValueListenableBuilder(
         valueListenable: theme,
         builder: (context, mode, _) => MaterialApp(
-          title: 'Matrices',
+          title: 'MatriCalc',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,

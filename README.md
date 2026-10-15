@@ -1,8 +1,11 @@
-# Matrices
+# MatriCalc
 
 App de **suma y resta de matrices** en Flutter: web (PC y PWA para iPhone),
 APK de Android e iOS. API en `../matrices-api`.
 
+- **Simple** (A ± B) o **compuesta**: de 3 a 8 matrices con un operador
+  (+ o −) independiente entre cada par, la expresión completa a la vista
+  (`R = A + B − C`) y el paso a paso por etapas y por celda.
 - Sin cuenta: la calculadora funciona completa (el cálculo es local y exacto).
 - Con Google: cada operación se guarda en el historial del usuario.
 - **Desde foto**: se sube una foto de una o dos matrices, la API las lee
@@ -16,13 +19,13 @@ copiar resultado, tema claro/oscuro.
 
 | | URL |
 | --- | --- |
-| Landing (descripción, instalar en iPhone / Android / PC) | https://matrices.quantis.site |
-| App web / PWA | https://matrices.quantis.site/app/ |
-| Publicar APK nuevo | https://matrices.quantis.site/subir |
-| API | https://matricesapi.quantis.site |
-| Estado de la API | https://matricesapi.quantis.site/health |
-| Documentación de la API | https://matricesapi.quantis.site/docs |
-| Descarga del APK | https://matricesapi.quantis.site/api/apk/download |
+| Landing (descripción, instalar en iPhone / Android / PC) | https://matricalc.quantis.site |
+| App web / PWA | https://matricalc.quantis.site/app/ |
+| Publicar APK nuevo | https://matricalc.quantis.site/subir |
+| API | https://matricalcapi.quantis.site |
+| Estado de la API | https://matricalcapi.quantis.site/health |
+| Documentación de la API | https://matricalcapi.quantis.site/docs |
+| Descarga del APK | https://matricalcapi.quantis.site/api/apk/download |
 
 Repos: [matrices-api](https://github.com/dalvarez005/matrices-api) · [matrices-app](https://github.com/dalvarez005/matrices-app).
 Servidor: Orange Pi (Docker) detrás del túnel de Cloudflare.
@@ -68,7 +71,7 @@ que crear una clave propia y registrar su SHA-1 en Google (docs/GOOGLE.md).
 
 ## Web: landing + app
 
-`matrices.quantis.site` sirve la **landing** (`landing/`) en `/` y la app
+`matricalc.quantis.site` sirve la **landing** (`landing/`) en `/` y la app
 Flutter en `/app/`. La landing detecta el dispositivo:
 
 - **iPhone/iPad:** pasos para instalarla como PWA desde Safari.
@@ -82,7 +85,7 @@ deploy/web/build.sh                              # arma build/site (landing + ap
 deploy/web/deploy.sh orangepi@192.168.1.77       # publica en ~/matrices-web, puerto 5190
 ```
 
-En el iPhone: abrir `matrices.quantis.site/app/` en Safari → Compartir →
+En el iPhone: abrir `matricalc.quantis.site/app/` en Safari → Compartir →
 *Agregar a inicio*.
 
 ## Inicio de sesión con Google
